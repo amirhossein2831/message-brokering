@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/queue"
+	"kafkaAndRabbitAndReddisAndGooooo/job"
 )
 
 type Channel string
@@ -17,10 +17,10 @@ const (
 
 type Publisher struct {
 	Channel Channel
-	Queue   queue.Queue
+	Queue   job.Queue
 }
 
-func NewPublisher(channel Channel, queue queue.Queue) *Publisher {
+func NewPublisher(channel Channel, queue job.Queue) *Publisher {
 	return &Publisher{
 		Channel: channel,
 		Queue:   queue,

@@ -1,20 +1,20 @@
 package job
 
-import (
-	"kafkaAndRabbitAndReddisAndGooooo/queue"
+const (
+	LogQueue Queue = "log-queue"
 )
 
 type LogJob struct {
-	queue queue.Queue
+	queue Queue
 }
 
-func NewLogJob(queueName queue.Queue) *LogJob {
+func NewLogJob(queueName Queue) *LogJob {
 	return &LogJob{
 		queue: queueName,
 	}
 }
 
-func (j *LogJob) GetQueue() queue.Queue {
+func (j *LogJob) GetQueue() Queue {
 	return j.queue
 }
 

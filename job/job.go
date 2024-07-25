@@ -1,10 +1,8 @@
 package job
 
-import (
-	"kafkaAndRabbitAndReddisAndGooooo/queue"
-)
+type Queue string
 
 type Job interface {
-	GetQueue() queue.Queue
+	GetQueue() Queue
 	Process(payload []byte) error
 }
