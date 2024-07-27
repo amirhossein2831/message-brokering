@@ -58,7 +58,7 @@ func (p *Publisher) rabbitMqPub(payload []byte) error {
 }
 
 func (p *Publisher) kafkaPub(payload []byte) error {
-	pub, err := k.NewKafka()
+	pub, err := k.NewKafkaProducer()
 	if err != nil {
 		return fmt.Errorf("failed to create connection: %s", err)
 	}

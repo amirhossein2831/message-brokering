@@ -21,7 +21,6 @@ type Kafka struct {
 
 // GetInstance creates a new KafkaInstance consumer
 func GetInstance() *Kafka {
-	//TODO: read group id  and offset from .env
 	c, _ := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT")),
 		"group.id":          os.Getenv("KAFKA_CONSUMER_GROUP_ID"),

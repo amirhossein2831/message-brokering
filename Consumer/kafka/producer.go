@@ -10,7 +10,7 @@ type Publisher struct {
 	Producer *kafka.Producer
 }
 
-func NewKafka() (*Publisher, error) {
+func NewKafkaProducer() (*Publisher, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT")),
 		"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
@@ -25,6 +25,7 @@ func NewKafka() (*Publisher, error) {
 
 func (k *Publisher) Produce(topic string, data []byte, partition int32) error {
 	deliveryChan := make(chan kafka.Event)
+	defer k.Producer.Close()
 
 	err := k.Producer.Produce(
 		&kafka.Message{
