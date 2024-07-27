@@ -2,9 +2,11 @@ package bootstrap
 
 import (
 	"fmt"
+	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"os"
 )
 
 var jobs []job.Job
@@ -23,15 +25,22 @@ func InitJobs() error {
 
 // Register :Register jobs
 func Register(jobs []job.Job) error {
-	d := driver.Redis // TODO: give from .env
+	d := os.Getenv("MESSAGE_BROKER_DRIVER")
 
 	switch d {
-	case driver.Redis:
+	case string(driver.Redis):
 		for _, j := range jobs {
 			go redis.GetInstance().Consume(j)
 		}
-	case driver.RabbitMQ:
-	case driver.Kafka:
+		//TODO: rabbit is remain
+	case string(driver.RabbitMQ):
+		for _, j := range jobs {
+			println("rabbit", j.GetQueue())
+		}
+	case string(driver.Kafka):
+		for _, j := range jobs {
+			go kafka.GetInstance().Consume(j)
+		}
 	default:
 		return fmt.Errorf("not a valid channel")
 	}
