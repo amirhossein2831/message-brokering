@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"github.com/joho/godotenv"
 	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/Publisher"
 	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
-	"kafkaAndRabbitAndReddisAndGooooo/job"
 	"log"
 	"os"
 	"os/signal"
@@ -20,18 +18,16 @@ func main() {
 	defer cancel()
 
 	// Init...
-	err := bootstrap.InitJobs()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	err = bootstrap.InitJobs()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// Publish some message
-	// TODO: read the channel from env
-	_ = Publisher.NewPublisher(Publisher.Redis, job.LogQueue).Publish([]byte("hello"))
-	fmt.Println("Published message at", "hi")
-	_ = Publisher.NewPublisher(Publisher.Redis, job.LogQueue).Publish([]byte("hello"))
-	fmt.Println("Published message at", "hi")
-
+	
 	// Wait for interrupt signal
 	<-sigChan
 	log.Println("Received shutdown signal")
