@@ -36,7 +36,7 @@ func (r *Redis) GetClient() *redis.Client {
 }
 
 func (r *Redis) Consume(job job.Job) {
-	log.Printf("Start Consume job: %v", job.GetQueue())
+	log.Printf("Redis: Start Consume job: %v", job.GetQueue())
 
 	ctx := context.Background()
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))

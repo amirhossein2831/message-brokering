@@ -31,7 +31,7 @@ services:
       KAFKA_JMX_HOSTNAME: localhost
 
   redis:
-    image: redis:latest
+    image: redis:alpine
     container_name: redis_container
     ports:
       - "6379:6379"
