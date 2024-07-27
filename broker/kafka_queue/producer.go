@@ -6,11 +6,11 @@ import (
 	"os"
 )
 
-type Kafka struct {
+type KafkaProducer struct {
 	Producer *kafka.Producer
 }
 
-func NewKafka(clientId string, ack string) (*Kafka, error) {
+func NewKafka(clientId string, ack string) (*KafkaProducer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT")),
 		"client.id":         clientId,
@@ -19,10 +19,10 @@ func NewKafka(clientId string, ack string) (*Kafka, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Kafka{Producer: p}, nil
+	return &KafkaProducer{Producer: p}, nil
 }
 
-func (k *Kafka) Produce(topic string, data []byte, partition int32) error {
+func (k *KafkaProducer) Produce(topic string, data []byte, partition int32) error {
 	deliveryChan := make(chan kafka.Event)
 
 	err := k.Producer.Produce(
