@@ -34,7 +34,6 @@ func GetInstance() *Kafka {
 func (k *Kafka) Consume(job job.Job) {
 	log.Printf("Kafka: Start Consume job: %v", job.GetQueue())
 
-	ctx := context.Background()
 	err := k.connection.Subscribe(string(job.GetQueue()), nil)
 	if err != nil {
 		log.Println(err.Error())
@@ -42,29 +41,31 @@ func (k *Kafka) Consume(job job.Job) {
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Received shutdown signal, waiting for all processes to finish...")
-			k.connection.Close()
-			wg.Wait()
-			return
-		default:
-			msg, err := k.connection.ReadMessage(-1)
-			if err != nil {
-				fmt.Printf("connection error: %v\n", err)
-				time.Sleep(time.Second)
-				continue
-			}
-
-			wg.Add(1)
-			go func(msg *kafka.Message) {
-				defer wg.Done()
-
-				fmt.Printf("Received message: %s\n", string(msg.Value))
-				if err = job.Process(msg.Value); err != nil {
-					fmt.Printf("Error processing message: %v\n", err)
-				}
-			}(msg)
+		msg, err := k.connection.ReadMessage(-1)
+		if err != nil {
+			fmt.Printf("connection error: %v\n", err)
+			time.Sleep(time.Second)
+			continue
 		}
+
+		wg.Add(1)
+		go func(msg *kafka.Message) {
+			defer wg.Done()
+
+			fmt.Printf("Received message: %s\n", string(msg.Value))
+			if err = job.Process(msg.Value); err != nil {
+				fmt.Printf("Error processing message: %v\n", err)
+			}
+		}(msg)
 	}
+}
+
+func (k *Kafka) Shutdown(ctx context.Context) {
+	<-ctx.Done()
+	wg.Wait()
+
+	if k.connection != nil {
+		k.connection.Close()
+	}
+	log.Println("All Kafka jobs completed, shutting down")
 }

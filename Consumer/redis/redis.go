@@ -66,6 +66,9 @@ func (r *Redis) Shutdown(ctx context.Context) {
 	for _, pubSub := range r.pubSubs {
 		_ = pubSub.Close()
 	}
-	r.connection.Close()
-	log.Println("All jobs completed, shutting down")
+
+	if r.connection != nil {
+		r.connection.Close()
+	}
+	log.Println("All Redis jobs completed, shutting down")
 }
