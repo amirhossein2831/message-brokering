@@ -3,6 +3,8 @@ package Publisher
 import (
 	"context"
 	"fmt"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	k "kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 )
@@ -10,7 +12,7 @@ import (
 type Channel string
 
 const (
-	Redis    Channel = "Consumer"
+	Redis    Channel = "connection"
 	RabbitMQ Channel = "rabbitmq"
 	Kafka    Channel = "kafka"
 )
@@ -63,5 +65,16 @@ func (p *Publisher) rabbitMqPub(payload []byte) error {
 }
 
 func (p *Publisher) kafkaPub(payload []byte) error {
+	pub, err := k.NewKafka()
+	if err != nil {
+		return fmt.Errorf("failed to create connection: %s", err)
+	}
+
+	err = pub.Produce(string(p.Queue), payload, kafka.PartitionAny)
+	if err != nil {
+		return fmt.Errorf("failed to publish message: %v", err)
+	}
+
+	pub.Producer.Close()
 	return nil
 }
