@@ -1,51 +1,57 @@
-package kafka_queue
+package kafka
 
 import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/Jobb"
+	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"log"
 	"os"
 	"sync"
 	"time"
 )
 
-type KafkaConsumer struct {
-	Consumer *kafka.Consumer
+var wg sync.WaitGroup
+var topics []string
+
+type Kafka struct {
+	connection *kafka.Consumer
 }
 
-// NewKafkaConsumer creates a new KafkaProducer consumer
-func NewKafkaConsumer(groupID string, topics []string) (*KafkaConsumer, error) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+// GetInstance creates a new KafkaInstance consumer
+func GetInstance() *Kafka {
+	//TODO: read group id  and offset from .env
+	c, _ := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT")),
-		"group.id":          groupID,
-		"auto.offset.reset": "earliest",
+		"group.id":          os.Getenv("KAFKA_CONSUMER_GROUP_ID"),
+		"auto.offset.reset": os.Getenv("KAFKA_CONSUMER_OFFSET"),
 	})
-	if err != nil {
-		return nil, err
+	return &Kafka{
+		connection: c,
 	}
-
-	if err := c.SubscribeTopics(topics, nil); err != nil {
-		return nil, err
-	}
-
-	return &KafkaConsumer{Consumer: c}, nil
 }
 
-func (k *KafkaConsumer) Consume(ctx context.Context, job Jobb.Job) {
-	var wg sync.WaitGroup
+func (k *Kafka) Consume(job job.Job) {
+	log.Printf("Kafka: Start Consume job: %v", job.GetQueue())
+
+	ctx := context.Background()
+	err := k.connection.Subscribe(string(job.GetQueue()), nil)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			fmt.Println("Received shutdown signal, waiting for all processes to finish...")
-			k.Consumer.Close()
+			k.connection.Close()
 			wg.Wait()
 			return
 		default:
-			msg, err := k.Consumer.ReadMessage(-1)
+			msg, err := k.connection.ReadMessage(-1)
 			if err != nil {
-				fmt.Printf("Consumer error: %v\n", err)
+				fmt.Printf("connection error: %v\n", err)
 				time.Sleep(time.Second)
 				continue
 			}
@@ -55,7 +61,7 @@ func (k *KafkaConsumer) Consume(ctx context.Context, job Jobb.Job) {
 				defer wg.Done()
 
 				fmt.Printf("Received message: %s\n", string(msg.Value))
-				if err = job(msg.Value); err != nil {
+				if err = job.Process(msg.Value); err != nil {
 					fmt.Printf("Error processing message: %v\n", err)
 				}
 			}(msg)
