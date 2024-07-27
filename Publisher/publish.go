@@ -6,42 +6,35 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	k "kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
+	"kafkaAndRabbitAndReddisAndGooooo/driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 )
 
-type Channel string
-
-const (
-	Redis    Channel = "connection"
-	RabbitMQ Channel = "rabbitmq"
-	Kafka    Channel = "kafka"
-)
-
 type Publisher struct {
-	Channel Channel
-	Queue   job.Queue
+	Driver driver.Driver
+	Queue  job.Queue
 }
 
-func NewPublisher(channel Channel, queue job.Queue) *Publisher {
+func NewPublisher(driver driver.Driver, queue job.Queue) *Publisher {
 	return &Publisher{
-		Channel: channel,
-		Queue:   queue,
+		Driver: driver,
+		Queue:  queue,
 	}
 }
 
 func (p *Publisher) Publish(payload []byte) error {
-	switch p.Channel {
-	case Redis:
+	switch p.Driver {
+	case driver.Redis:
 		err := p.redisPub(payload)
 		if err != nil {
 			return err
 		}
-	case RabbitMQ:
+	case driver.RabbitMQ:
 		err := p.rabbitMqPub(payload)
 		if err != nil {
 			return err
 		}
-	case Kafka:
+	case driver.Kafka:
 		err := p.kafkaPub(payload)
 		if err != nil {
 			return err
