@@ -39,7 +39,8 @@ func (k *Kafka) Produce(topic string, data []byte, partition int32) error {
 	if m.TopicPartition.Error != nil {
 		return fmt.Errorf("delivery failed: %v", m.TopicPartition.Error)
 	}
-
 	fmt.Printf("Delivered message to %v,messsage: %s \n", m.TopicPartition, data)
+
+	close(deliveryChan)
 	return nil
 }
