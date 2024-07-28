@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/joho/godotenv"
+	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
 	"log"
@@ -36,4 +38,6 @@ func main() {
 
 	// Shutdowns...
 	redis.GetInstance().Shutdown(ctx)
+	kafka.GetInstance().Shutdown(ctx)
+	rabbitmq.GetInstance().Shutdown(ctx)
 }
