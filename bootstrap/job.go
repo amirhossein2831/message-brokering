@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"fmt"
 	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
@@ -33,10 +34,9 @@ func Register(jobs []job.Job) error {
 		for _, j := range jobs {
 			go redis.GetInstance().Consume(j)
 		}
-		//TODO: rabbit is remain
 	case string(driver.RabbitMQ):
 		for _, j := range jobs {
-			println("rabbit", j.GetQueue())
+			go rabbitmq.GetInstance().Consume(j)
 		}
 	case string(driver.Kafka):
 		for _, j := range jobs {
