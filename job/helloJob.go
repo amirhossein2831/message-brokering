@@ -1,8 +1,6 @@
 package job
 
-const (
-	HelloQueue Queue = "hello-queue"
-)
+const HelloQueue Queue = "hello-queue"
 
 type HelloJob struct{}
 
