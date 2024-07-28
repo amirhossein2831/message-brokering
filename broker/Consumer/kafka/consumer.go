@@ -3,10 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"go.uber.org/zap"
-	"kafkaAndRabbitAndReddisAndGooooo/job"
-	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"log"
 	"os"
 	"sync"

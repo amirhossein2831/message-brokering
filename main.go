@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
+	"github.com/amirhossein2831/message-brokering/bootstrap"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/kafka"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/rabbitmq"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
 	"log"
 	"os"
 	"os/signal"

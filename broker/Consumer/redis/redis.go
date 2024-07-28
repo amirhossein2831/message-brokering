@@ -3,10 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
-	"kafkaAndRabbitAndReddisAndGooooo/job"
-	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"log"
 	"os"
 	"sync"

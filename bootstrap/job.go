@@ -2,14 +2,14 @@ package bootstrap
 
 import (
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/kafka"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/rabbitmq"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
+	"github.com/amirhossein2831/message-brokering/broker/Driver"
+	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
-	"kafkaAndRabbitAndReddisAndGooooo/job"
-	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"time"
 )
 
