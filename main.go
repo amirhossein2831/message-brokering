@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/joho/godotenv"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
 	"log"
 	"os"
 	"os/signal"
@@ -18,16 +19,21 @@ func main() {
 	defer cancel()
 
 	// Init env var
-	err := godotenv.Load()
+	err := bootstrap.InitEnv()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal(err)
+		return
+	}
+
+	// Init env driver
+	err = bootstrap.InitDriver()
+	if err != nil {
+		log.Fatal("Error loading driver", err)
+		return
 	}
 
 	// Init Jobs
-	err = bootstrap.InitJobs()
-	if err != nil {
-		log.Fatal(err)
-	}
+	bootstrap.InitJobs()
 
 	// Wait for interrupt signal
 	<-sigChan
@@ -36,4 +42,6 @@ func main() {
 
 	// Shutdowns...
 	redis.GetInstance().Shutdown(ctx)
+	kafka.GetInstance().Shutdown(ctx)
+	rabbitmq.GetInstance().Shutdown(ctx)
 }

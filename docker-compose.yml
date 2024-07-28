@@ -39,5 +39,20 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: rabbitmq_container
+    restart: unless-stopped
+    ports:
+      - ${RABBITMQ_PORT:-5672}:5672
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+
+
 volumes:
   redis_data:
+  rabbit-data:

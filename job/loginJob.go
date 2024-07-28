@@ -1,11 +1,8 @@
 package job
 
-const (
-	LogQueue Queue = "log-queue"
-)
+const LogQueue Queue = "log-queue"
 
-type LogJob struct {
-}
+type LogJob struct{}
 
 func NewLogJob() *LogJob {
 	return &LogJob{}

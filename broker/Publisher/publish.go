@@ -4,38 +4,39 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	k "kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
-	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/driver"
+	k "kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
+	redis2 "kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 	"os"
 )
 
 type Publisher struct {
-	Driver driver.Driver
+	Driver Driver.Driver
 	Queue  job.Queue
 }
 
 func NewPublisher(queue job.Queue) *Publisher {
 	return &Publisher{
-		Driver: driver.Driver(os.Getenv("MESSAGE_BROKER_DRIVER")),
+		Driver: Driver.Driver(os.Getenv("MESSAGE_BROKER_DRIVER")),
 		Queue:  queue,
 	}
 }
 
 func (p *Publisher) Publish(payload []byte) error {
 	switch p.Driver {
-	case driver.Redis:
+	case Driver.Redis:
 		err := p.redisPub(payload)
 		if err != nil {
 			return err
 		}
-	case driver.RabbitMQ:
+	case Driver.RabbitMQ:
 		err := p.rabbitMqPub(payload)
 		if err != nil {
 			return err
 		}
-	case driver.Kafka:
+	case Driver.Kafka:
 		err := p.kafkaPub(payload)
 		if err != nil {
 			return err
@@ -55,6 +56,11 @@ func (p *Publisher) redisPub(payload []byte) error {
 }
 
 func (p *Publisher) rabbitMqPub(payload []byte) error {
+	err := rabbitmq.GetInstance().Publish(string(p.Queue), payload)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

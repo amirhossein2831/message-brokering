@@ -2,48 +2,43 @@ package bootstrap
 
 import (
 	"fmt"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/driver"
+	"github.com/joho/godotenv"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
-	"os"
 )
 
-var jobs []job.Job
-
-func InitJobs() error {
-	// add your job to jobs list...
-	jobs = append(jobs, job.NewLogJob())
-	jobs = append(jobs, job.NewHelloJob())
-
-	// Register your Job
-	err := Register(jobs)
+func InitEnv() error {
+	err := godotenv.Load()
 	if err != nil {
-		return err
+		return fmt.Errorf("error loading .env file")
 	}
 	return nil
 }
 
-// Register :Register jobs
-func Register(jobs []job.Job) error {
-	d := os.Getenv("MESSAGE_BROKER_DRIVER")
-
-	switch d {
-	case string(driver.Redis):
-		for _, j := range jobs {
-			go redis.GetInstance().Consume(j)
-		}
-		//TODO: rabbit is remain
-	case string(driver.RabbitMQ):
-		for _, j := range jobs {
-			println("rabbit", j.GetQueue())
-		}
-	case string(driver.Kafka):
-		for _, j := range jobs {
-			go kafka.GetInstance().Consume(j)
-		}
-	default:
-		return fmt.Errorf("not a valid channel")
+func InitDriver() error {
+	err := Driver.GetDriver()
+	if err != nil {
+		return fmt.Errorf("error loading driver %v", err)
 	}
 	return nil
+}
+
+func Register(job job.Job) {
+	switch Driver.EnvDriver {
+	case Driver.Redis:
+		go redis.GetInstance().Consume(job)
+	case Driver.RabbitMQ:
+		go rabbitmq.GetInstance().Consume(job)
+	case Driver.Kafka:
+		go kafka.GetInstance().Consume(job)
+	}
+}
+
+// InitJobs :place to initial the jobs
+func InitJobs() {
+	Register(job.NewLogJob())
+	Register(job.NewHelloJob())
 }
