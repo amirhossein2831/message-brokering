@@ -17,17 +17,18 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Init...
+	// Init env var
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
+	// Init Jobs
 	err = bootstrap.InitJobs()
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Wait for interrupt signal
 	<-sigChan
 	log.Println("Received shutdown signal")
