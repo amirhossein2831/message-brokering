@@ -1,4 +1,4 @@
-module kafkaAndRabbitAndReddisAndGooooo
+module github.com/amirhossein2831/message-brokering
 
 go 1.22
 
