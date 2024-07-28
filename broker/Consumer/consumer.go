@@ -1,0 +1,20 @@
+package Consumer
+
+import (
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/kafka"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/rabbitmq"
+	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
+	"github.com/amirhossein2831/message-brokering/broker/Driver"
+	"github.com/amirhossein2831/message-brokering/job"
+)
+
+func RegisterJob(job job.Job) {
+	switch Driver.EnvDriver {
+	case Driver.Redis:
+		go redis.GetInstance().Consume(job)
+	case Driver.RabbitMQ:
+		go rabbitmq.GetInstance().Consume(job)
+	case Driver.Kafka:
+		go kafka.GetInstance().Consume(job)
+	}
+}
