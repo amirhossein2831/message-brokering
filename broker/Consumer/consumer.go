@@ -6,6 +6,10 @@ import (
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/pkg/logger"
+	"go.uber.org/zap"
+	"log"
+	"time"
 )
 
 func RegisterJob(job job.Job) {
@@ -16,5 +20,8 @@ func RegisterJob(job job.Job) {
 		go rabbitmq.GetInstance().Consume(job)
 	case Driver.Kafka:
 		go kafka.GetInstance().Consume(job)
+	default:
+		log.Println("Unsupported driver")
+		logger.GetInstance().Error("Unsupported driver", zap.Any("driver", Driver.EnvDriver), zap.Time("time", time.Now()))
 	}
 }
