@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	k "kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/Consumer/rabbitmq"
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
@@ -55,6 +56,11 @@ func (p *Publisher) redisPub(payload []byte) error {
 }
 
 func (p *Publisher) rabbitMqPub(payload []byte) error {
+	err := rabbitmq.GetInstance().Publish(string(p.Queue), payload)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
