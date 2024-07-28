@@ -1,6 +1,8 @@
 package bootstrap
 
 import (
+	"fmt"
+	"github.com/joho/godotenv"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
@@ -8,10 +10,20 @@ import (
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 )
 
-func InitJobs() {
-	// add your job to jobs list...
-	Register(job.NewLogJob())
-	Register(job.NewHelloJob())
+func InitEnv() error {
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("error loading .env file")
+	}
+	return nil
+}
+
+func InitDriver() error {
+	err := Driver.GetDriver()
+	if err != nil {
+		return fmt.Errorf("error loading driver %v", err)
+	}
+	return nil
 }
 
 func Register(job job.Job) {
@@ -23,4 +35,10 @@ func Register(job job.Job) {
 	case Driver.Kafka:
 		go kafka.GetInstance().Consume(job)
 	}
+}
+
+// InitJobs :place to initial the jobs
+func InitJobs() {
+	Register(job.NewLogJob())
+	Register(job.NewHelloJob())
 }

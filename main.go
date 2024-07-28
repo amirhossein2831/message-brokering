@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/joho/godotenv"
 	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"log"
 	"os"
 	"os/signal"
@@ -21,17 +19,19 @@ func main() {
 	defer cancel()
 
 	// Init env var
-	err := godotenv.Load()
+	err := bootstrap.InitEnv()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal(err)
+		return
 	}
 
-	// Check the env driver
-	err = Driver.GetDriver()
+	// Init env driver
+	err = bootstrap.InitDriver()
 	if err != nil {
 		log.Fatal("Error loading driver", err)
 		return
 	}
+
 	// Init Jobs
 	bootstrap.InitJobs()
 
