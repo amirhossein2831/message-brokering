@@ -68,6 +68,5 @@ func (p *Publisher) kafkaPub(payload []byte) error {
 		return fmt.Errorf("failed to publish message: %v", err)
 	}
 
-	pub.Producer.Close()
 	return nil
 }
