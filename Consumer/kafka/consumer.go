@@ -62,7 +62,6 @@ func (k *Kafka) Consume(job job.Job) {
 		go func(msg *kafka.Message) {
 			defer wg.Done()
 
-			fmt.Printf("Received message: %s\n", string(msg.Value))
 			if err = job.Process(msg.Value); err != nil {
 				fmt.Printf("Error processing message: %v\n", err)
 			}

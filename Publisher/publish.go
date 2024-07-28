@@ -8,6 +8,7 @@ import (
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"os"
 )
 
 type Publisher struct {
@@ -15,9 +16,9 @@ type Publisher struct {
 	Queue  job.Queue
 }
 
-func NewPublisher(driver driver.Driver, queue job.Queue) *Publisher {
+func NewPublisher(queue job.Queue) *Publisher {
 	return &Publisher{
-		Driver: driver,
+		Driver: driver.Driver(os.Getenv("MESSAGE_BROKER_DRIVER")),
 		Queue:  queue,
 	}
 }
