@@ -5,17 +5,14 @@ const (
 )
 
 type HelloJob struct {
-	queue Queue
 }
 
-func NewHelloJob(queueName Queue) *HelloJob {
-	return &HelloJob{
-		queue: queueName,
-	}
+func NewHelloJob() *HelloJob {
+	return &HelloJob{}
 }
 
 func (j *HelloJob) GetQueue() Queue {
-	return j.queue
+	return HelloQueue
 }
 
 func (j *HelloJob) Process(payload []byte) error {

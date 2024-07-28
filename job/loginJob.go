@@ -5,17 +5,14 @@ const (
 )
 
 type LogJob struct {
-	queue Queue
 }
 
-func NewLogJob(queueName Queue) *LogJob {
-	return &LogJob{
-		queue: queueName,
-	}
+func NewLogJob() *LogJob {
+	return &LogJob{}
 }
 
 func (j *LogJob) GetQueue() Queue {
-	return j.queue
+	return LogQueue
 }
 
 func (j *LogJob) Process(payload []byte) error {
