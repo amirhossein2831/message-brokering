@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"github.com/joho/godotenv"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/rabbitmq"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/bootstrap"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
 	"log"
 	"os"
 	"os/signal"

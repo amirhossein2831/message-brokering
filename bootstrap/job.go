@@ -2,10 +2,10 @@ package bootstrap
 
 import (
 	"fmt"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/kafka"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/rabbitmq"
-	"kafkaAndRabbitAndReddisAndGooooo/Consumer/redis"
-	"kafkaAndRabbitAndReddisAndGooooo/driver"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 	"os"
 )
@@ -30,15 +30,15 @@ func Register(jobs []job.Job) error {
 	d := os.Getenv("MESSAGE_BROKER_DRIVER")
 
 	switch d {
-	case string(driver.Redis):
+	case string(Driver.Redis):
 		for _, j := range jobs {
 			go redis.GetInstance().Consume(j)
 		}
-	case string(driver.RabbitMQ):
+	case string(Driver.RabbitMQ):
 		for _, j := range jobs {
 			go rabbitmq.GetInstance().Consume(j)
 		}
-	case string(driver.Kafka):
+	case string(Driver.Kafka):
 		for _, j := range jobs {
 			go kafka.GetInstance().Consume(j)
 		}
