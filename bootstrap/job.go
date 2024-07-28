@@ -14,6 +14,7 @@ var jobs []job.Job
 func InitJobs() error {
 	// add your job to jobs list...
 	jobs = append(jobs, job.NewLogJob(job.LogQueue))
+	jobs = append(jobs, job.NewHelloJob(job.HelloQueue))
 
 	// Register your Job
 	err := Register(jobs)
