@@ -7,7 +7,6 @@ import (
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 	"log"
-	"os"
 )
 
 func InitJobs() {
@@ -17,16 +16,14 @@ func InitJobs() {
 }
 
 func Register(job job.Job) {
-	d := os.Getenv("MESSAGE_BROKER_DRIVER")
-
-	switch d {
-	case string(Driver.Redis):
+	switch Driver.EnvDriver {
+	case Driver.Redis:
 		go redis.GetInstance().Consume(job)
-	case string(Driver.RabbitMQ):
+	case Driver.RabbitMQ:
 		go rabbitmq.GetInstance().Consume(job)
-	case string(Driver.Kafka):
+	case Driver.Kafka:
 		go kafka.GetInstance().Consume(job)
 	default:
-		log.Printf("not a valid driver %s", d)
+		log.Printf("not a valid driver %s", Driver.EnvDriver)
 	}
 }

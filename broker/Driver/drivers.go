@@ -13,11 +13,25 @@ const (
 	Kafka    Driver = "kafka"
 )
 
-func GetDriver() (Driver, error) {
+var EnvDriver Driver
+
+func GetDriver() error {
 	d := os.Getenv("MESSAGE_BROKER_DRIVER")
 
-	if d == string(Redis) || d == string(Kafka) || d == string(RabbitMQ) {
-		return Driver(d), nil
+	if d == string(Redis) {
+		EnvDriver = Redis
+		return nil
 	}
-	return "", fmt.Errorf("not a valid driver")
+
+	if d == string(RabbitMQ) {
+		EnvDriver = RabbitMQ
+		return nil
+	}
+
+	if d == string(Kafka) {
+		EnvDriver = Kafka
+		return nil
+	}
+
+	return fmt.Errorf("not a valid driver")
 }

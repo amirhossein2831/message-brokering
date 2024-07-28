@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Check the env driver
-	_, err = Driver.GetDriver()
+	err = Driver.GetDriver()
 	if err != nil {
 		log.Fatal("Error loading driver", err)
 		return
