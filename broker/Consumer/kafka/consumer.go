@@ -84,6 +84,7 @@ func (k *Kafka) Consume(job job.Job) {
 			if err != nil {
 				logger.GetInstance().Error("Kafka: Failed to commit message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			}
+			logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 		}()
 	}
 }

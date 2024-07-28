@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -54,20 +57,24 @@ func (r *RabbitMQ) GetChannel() (*amqp.Channel, error) {
 
 func (r *RabbitMQ) Consume(job job.Job) {
 	log.Printf("RabbitMQ: Start Consume job: %v", job.GetQueue())
+	logger.GetInstance().Info("RabbitMQ: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	ch, err := r.GetChannel()
 	if err != nil {
-		log.Fatalf("Failed to open a channel: %v", err)
+		logger.GetInstance().Error("RabbitMQ: Failed to open a channel: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		return
 	}
 
 	q, err := ch.QueueDeclare(string(job.GetQueue()), true, false, false, false, nil)
 	if err != nil {
-		log.Fatalf("Failed to declare a queue: %v", err)
+		logger.GetInstance().Error("RabbitMQ: Failed to open a cha: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		return
 	}
 
 	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 	if err != nil {
-		log.Fatalf("Failed to register a consumer: %v", err)
+		logger.GetInstance().Error("RabbitMQ: Failed to register a consumer:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		return
 	}
 
 	for d := range msgs {
@@ -76,9 +83,10 @@ func (r *RabbitMQ) Consume(job job.Job) {
 			defer wg.Done()
 			err := job.Process(d.Body)
 			if err != nil {
+				logger.GetInstance().Error("RabbitMQ: Failed to  process job:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				d.Nack(false, false)
-				log.Println("Error processing job:", err)
 			} else {
+				logger.GetInstance().Info("RabbitMQ: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				d.Ack(false)
 			}
 		}()
@@ -122,4 +130,5 @@ func (r *RabbitMQ) Shutdown(ctx context.Context) {
 		r.connection.Close()
 	}
 	log.Println("All RabbitMQ jobs completed, shutting down")
+	logger.GetInstance().Info("RabbitMq: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
 }
