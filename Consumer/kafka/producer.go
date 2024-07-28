@@ -1,4 +1,4 @@
-package kafka_queue
+package kafka
 
 import (
 	"fmt"
@@ -6,24 +6,26 @@ import (
 	"os"
 )
 
-type KafkaProducer struct {
+type Publisher struct {
 	Producer *kafka.Producer
 }
 
-func NewKafka(clientId string, ack string) (*KafkaProducer, error) {
+func NewKafkaProducer() (*Publisher, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT")),
-		"client.id":         clientId,
-		"acks":              ack,
+		"client.id":         os.Getenv("KAFKA_CLIENT_ID"),
+		"acks":              os.Getenv("KAFKA_CLIENT_ACK"),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &KafkaProducer{Producer: p}, nil
+
+	return &Publisher{Producer: p}, nil
 }
 
-func (k *KafkaProducer) Produce(topic string, data []byte, partition int32) error {
+func (k *Publisher) Produce(topic string, data []byte, partition int32) error {
 	deliveryChan := make(chan kafka.Event)
+	defer k.Producer.Close()
 
 	err := k.Producer.Produce(
 		&kafka.Message{
@@ -39,7 +41,6 @@ func (k *KafkaProducer) Produce(topic string, data []byte, partition int32) erro
 	if m.TopicPartition.Error != nil {
 		return fmt.Errorf("delivery failed: %v", m.TopicPartition.Error)
 	}
-	fmt.Printf("Delivered message to %v,messsage: %s \n", m.TopicPartition, data)
 
 	close(deliveryChan)
 	return nil
