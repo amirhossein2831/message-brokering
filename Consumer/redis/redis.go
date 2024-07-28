@@ -2,9 +2,11 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -23,7 +25,7 @@ func GetInstance() *Redis {
 	clientOnce.Do(func() {
 		instance = &Redis{
 			connection: redis.NewClient(&redis.Options{
-				Addr: "localhost:6379", // Todo: read from env
+				Addr: fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
 			}),
 			pubSubs: make([]*redis.PubSub, 0),
 		}
