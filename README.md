@@ -21,7 +21,8 @@ cp .env.example .env
 
 ### 3. Configuration
 
-You need to set up your message broker (redis, rabbitmq, kafka) in the .env file without type. The MESSAGE_BROKER_DRIVER environment variable specifies which broker to use.
+1_You need to set up your message broker (redis, rabbitmq, kafka) in the .env file without type. The MESSAGE_BROKER_DRIVER environment variable specifies which broker to use.
+2_create a folder called log in the root of your project for save the log 
 
 
 ### 4. Job Interface and Declaration
@@ -80,3 +81,48 @@ you can easily publish message, NewPublisher take the Queue type as arg to send 
 		//handle Error
 	}
 ```
+### 6. Shutdown...
+
+you need to wait for a kill signal for shutdown so after kill signal you can shutdown redis,rabbit,kafka....
+
+```go
+sigChan := make(chan os.Signal, 1)
+    //wait for kill signal
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// load .env
+	err := godotenv.Load()
+	if err != nil {
+		return
+	}
+	
+	// init the driver
+	err = Driver.Init()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	// publish a message to LogQueue
+	err = Publisher.NewPublisher(job.LogQueue).Publish([]byte("hello"))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	// Init Jobs
+	bootstrap.InitJob()
+
+	<-sigChan
+	log.Println("Received shutdown signal")
+	cancel()
+
+	// Shutdowns...
+	redis.GetInstance().Shutdown(ctx)
+	kafka.GetInstance().Shutdown(ctx)
+	rabbitmq.GetInstance().Shutdown(ctx)
+```
+
+
