@@ -3,11 +3,14 @@ package bootstrap
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
+	"time"
 )
 
 func InitEnv() error {
@@ -15,6 +18,8 @@ func InitEnv() error {
 	if err != nil {
 		return fmt.Errorf("error loading .env file")
 	}
+
+	logger.GetInstance().Info("Env Service: Env var loaded successfully", zap.Time("timestamp", time.Now()))
 	return nil
 }
 
@@ -23,6 +28,8 @@ func InitDriver() error {
 	if err != nil {
 		return fmt.Errorf("error loading driver %v", err)
 	}
+
+	logger.GetInstance().Info("Env Service: Broker Driver set correctly", zap.Time("timestamp", time.Now()))
 	return nil
 }
 

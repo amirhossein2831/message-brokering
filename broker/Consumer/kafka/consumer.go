@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"go.uber.org/zap"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"log"
 	"os"
 	"sync"
@@ -12,7 +14,6 @@ import (
 )
 
 var wg sync.WaitGroup
-var connections []*kafka.Consumer
 
 type Kafka struct {
 	connection *kafka.Consumer
@@ -26,10 +27,6 @@ func GetInstance() *Kafka {
 		"auto.offset.reset":  os.Getenv("KAFKA_CONSUMER_OFFSET"),
 		"enable.auto.commit": false,
 	})
-	if connections == nil {
-		connections = make([]*kafka.Consumer, 0)
-	}
-	connections = append(connections, c)
 
 	return &Kafka{
 		connection: c,
@@ -39,10 +36,11 @@ func GetInstance() *Kafka {
 func (k *Kafka) Consume(job job.Job) {
 	topic := string(job.GetQueue())
 	log.Printf("Kafka: Start Consume job: %v", job.GetQueue())
+	logger.GetInstance().Info("Kafka: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	partitions, err := k.createTopic(topic, 2, 1)
 	if err != nil {
-		log.Println(err.Error())
+		logger.GetInstance().Error("Kafka: Failed to create Topic: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 		return
 	}
 
@@ -57,30 +55,32 @@ func (k *Kafka) Consume(job job.Job) {
 
 	err = k.connection.Assign(topicPartitions)
 	if err != nil {
-		log.Fatalf("Failed to assign partitions: %s", err)
+		logger.GetInstance().Error("Kafka: Failed to assign partitions: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		return
 	}
 
 	for {
 		msg, err := k.connection.ReadMessage(-1)
 		if err != nil {
-			fmt.Printf("connection error: %v\n", err)
+			logger.GetInstance().Error("Kafka: Connection error: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			time.Sleep(time.Second)
 			continue
 		}
 
 		wg.Add(1)
-		go func(msg *kafka.Message) {
+		go func() {
 			defer wg.Done()
 
 			if err = job.Process(msg.Value); err != nil {
-				fmt.Printf("Error processing message: %v\n", err)
+				logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			}
 
 			_, err = k.connection.CommitMessage(msg)
 			if err != nil {
-				fmt.Printf("Failed to commit message: %v\n", err)
+				logger.GetInstance().Error("Kafka: Failed to commit message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			}
-		}(msg)
+			logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		}()
 	}
 }
 
@@ -88,11 +88,10 @@ func (k *Kafka) Shutdown(ctx context.Context) {
 	<-ctx.Done()
 	wg.Wait()
 
-	for _, conn := range connections {
-		conn.Close()
-	}
 	log.Println("All Kafka jobs completed, shutting down")
+	logger.GetInstance().Info("Kafka: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
 }
+
 func (k *Kafka) createTopic(topic string, numPartitions int, replicationFactor int) ([]int32, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
