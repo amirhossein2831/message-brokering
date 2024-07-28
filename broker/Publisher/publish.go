@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"go.uber.org/zap"
 	k "kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	redis2 "kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"os"
+	"time"
 )
 
 type Publisher struct {
@@ -43,6 +46,7 @@ func (p *Publisher) Publish(payload []byte) error {
 		}
 	}
 
+	logger.GetInstance().Info("Publisher: Message Publish Successfully: ", zap.Any("Driver", p.Driver), zap.Any("QueueName: ", p.Queue), zap.ByteString("payload", payload), zap.Time("timestamp", time.Now()))
 	return nil
 }
 
