@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"kafkaAndRabbitAndReddisAndGooooo/pkg/logger"
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -39,6 +42,7 @@ func (r *Redis) GetClient() *redis.Client {
 
 func (r *Redis) Consume(job job.Job) {
 	log.Printf("Redis: Start Consume job: %v", job.GetQueue())
+	logger.GetInstance().Info("Redis: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	ctx := context.Background()
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
@@ -47,7 +51,7 @@ func (r *Redis) Consume(job job.Job) {
 	for {
 		msg, err := pubSub.ReceiveMessage(ctx)
 		if err != nil {
-			log.Println("Error receiving message:", err)
+			logger.GetInstance().Error("Redis: Error Receiving Message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			continue
 		}
 		wg.Add(1)
@@ -56,8 +60,10 @@ func (r *Redis) Consume(job job.Job) {
 
 			err = job.Process([]byte(msg.Payload))
 			if err != nil {
-				log.Println("Error executing job:", err)
+				logger.GetInstance().Error("Redis: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			}
+			logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+
 		}()
 	}
 }
@@ -73,4 +79,5 @@ func (r *Redis) Shutdown(ctx context.Context) {
 		r.connection.Close()
 	}
 	log.Println("All Redis jobs completed, shutting down")
+	logger.GetInstance().Info("Redis: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
 }
