@@ -31,6 +31,6 @@ func encoderFile() zapcore.Encoder {
 }
 
 func logFile() zapcore.WriteSyncer {
-	file, _ := os.OpenFile("/log/log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, _ := os.OpenFile("log/log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	return zapcore.AddSync(file)
 }

@@ -14,7 +14,6 @@ import (
 )
 
 var wg sync.WaitGroup
-var connections []*kafka.Consumer
 
 type Kafka struct {
 	connection *kafka.Consumer
@@ -28,10 +27,6 @@ func GetInstance() *Kafka {
 		"auto.offset.reset":  os.Getenv("KAFKA_CONSUMER_OFFSET"),
 		"enable.auto.commit": false,
 	})
-	if connections == nil {
-		connections = make([]*kafka.Consumer, 0)
-	}
-	connections = append(connections, c)
 
 	return &Kafka{
 		connection: c,
@@ -93,9 +88,6 @@ func (k *Kafka) Shutdown(ctx context.Context) {
 	<-ctx.Done()
 	wg.Wait()
 
-	for _, conn := range connections {
-		conn.Close()
-	}
 	log.Println("All Kafka jobs completed, shutting down")
 	logger.GetInstance().Info("Kafka: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
 }
