@@ -1,49 +1,32 @@
 package bootstrap
 
 import (
-	"fmt"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"kafkaAndRabbitAndReddisAndGooooo/job"
+	"log"
 	"os"
 )
 
-var jobs []job.Job
-
-func InitJobs() error {
+func InitJobs() {
 	// add your job to jobs list...
-	jobs = append(jobs, job.NewLogJob())
-	jobs = append(jobs, job.NewHelloJob())
-
-	// Register your Job
-	err := Register(jobs)
-	if err != nil {
-		return err
-	}
-	return nil
+	Register(job.NewLogJob())
+	Register(job.NewHelloJob())
 }
 
-// Register :Register jobs
-func Register(jobs []job.Job) error {
+func Register(job job.Job) {
 	d := os.Getenv("MESSAGE_BROKER_DRIVER")
 
 	switch d {
 	case string(Driver.Redis):
-		for _, j := range jobs {
-			go redis.GetInstance().Consume(j)
-		}
+		go redis.GetInstance().Consume(job)
 	case string(Driver.RabbitMQ):
-		for _, j := range jobs {
-			go rabbitmq.GetInstance().Consume(j)
-		}
+		go rabbitmq.GetInstance().Consume(job)
 	case string(Driver.Kafka):
-		for _, j := range jobs {
-			go kafka.GetInstance().Consume(j)
-		}
+		go kafka.GetInstance().Consume(job)
 	default:
-		return fmt.Errorf("not a valid channel")
+		log.Printf("not a valid driver %s", d)
 	}
-	return nil
 }

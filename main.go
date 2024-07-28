@@ -7,6 +7,7 @@ import (
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/kafka"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/rabbitmq"
 	"kafkaAndRabbitAndReddisAndGooooo/broker/Consumer/redis"
+	"kafkaAndRabbitAndReddisAndGooooo/broker/Driver"
 	"log"
 	"os"
 	"os/signal"
@@ -25,11 +26,14 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Init Jobs
-	err = bootstrap.InitJobs()
+	// Check the env driver
+	_, err = Driver.GetDriver()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error loading driver", err)
+		return
 	}
+	// Init Jobs
+	bootstrap.InitJobs()
 
 	// Wait for interrupt signal
 	<-sigChan
