@@ -43,11 +43,11 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	logger.GetInstance().Info("Redis: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
+	defer r.Shutdown(pubSub, string(job.GetQueue()))
 
 	for {
 		select {
 		case <-ctx.Done():
-			r.Shutdown(pubSub, string(job.GetQueue()))
 			return
 		case msg, ok := <-pubSub.Channel():
 			if !ok {

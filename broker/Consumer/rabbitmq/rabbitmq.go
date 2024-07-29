@@ -60,11 +60,12 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 	logger.GetInstance().Info("RabbitMQ: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	ch, err := r.GetChannel()
-
 	if err != nil {
 		logger.GetInstance().Error("RabbitMQ: Failed to open a channel: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 		return
 	}
+	defer ch.Close()
+	defer r.Shutdown(string(job.GetQueue()))
 
 	q, err := ch.QueueDeclare(string(job.GetQueue()), true, false, false, false, nil)
 	if err != nil {
@@ -81,8 +82,6 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 	for {
 		select {
 		case <-ctx.Done():
-			ch.Close()
-			r.Shutdown(string(job.GetQueue()))
 			return
 		case d, ok := <-msgs:
 			if !ok {

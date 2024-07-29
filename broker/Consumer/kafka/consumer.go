@@ -58,17 +58,14 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 		logger.GetInstance().Error("Kafka: Failed to assign partitions: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 		return
 	}
+	defer k.Shutdown(string(job.GetQueue()))
 
 	messages := make(chan *kafka.Message)
-
 	go k.ReadMessages(ctx, messages)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Kafka: Shutdown the kafka channel: ", string(job.GetQueue()), "...")
-			k.Shutdown(string(job.GetQueue()))
-			// Perform any necessary cleanup here
 			return
 		case msg, ok := <-messages:
 			if !ok {
