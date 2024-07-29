@@ -1,6 +1,7 @@
 package Consumer
 
 import (
+	"context"
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/kafka"
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/rabbitmq"
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
@@ -12,10 +13,10 @@ import (
 	"time"
 )
 
-func RegisterJob(job job.Job) {
+func RegisterJob(ctx context.Context, job job.Job) {
 	switch Driver.EnvDriver {
 	case Driver.Redis:
-		go redis.GetInstance().Consume(job)
+		go redis.GetInstance().Consume(ctx, job)
 	case Driver.RabbitMQ:
 		go rabbitmq.GetInstance().Consume(job)
 	case Driver.Kafka:
