@@ -139,3 +139,6 @@ func (r *RabbitMQ) Shutdown(queue string) {
 	}
 	logger.GetInstance().Info("RabbitMQ: Shutdown the RabbitMQ consumer:", zap.String("QueueName: ", queue), zap.Time("timestamp", time.Now()))
 }
+func WaitForFinish() {
+	wg.Wait()
+}

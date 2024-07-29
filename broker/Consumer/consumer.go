@@ -26,3 +26,9 @@ func RegisterJob(ctx context.Context, job job.Job) {
 		logger.GetInstance().Error("Unsupported driver", zap.Any("driver", Driver.EnvDriver), zap.Time("time", time.Now()))
 	}
 }
+
+func ShutDown() {
+	kafka.WaitForFinish()
+	rabbitmq.WaitForFinish()
+	redis.WaitForFinish()
+}

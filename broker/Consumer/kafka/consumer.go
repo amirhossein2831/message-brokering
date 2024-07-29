@@ -183,3 +183,7 @@ func (k *Kafka) ReadMessages(ctx context.Context, messages chan<- *kafka.Message
 		}
 	}
 }
+
+func WaitForFinish() {
+	wg.Wait()
+}

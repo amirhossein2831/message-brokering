@@ -84,3 +84,7 @@ func (r *Redis) Shutdown(pubSub *redis.PubSub, queue string) {
 	}
 	logger.GetInstance().Info("Redis: Shutdown the redis channel: ", zap.String("QueueName: ", queue), zap.Time("timestamp", time.Now()))
 }
+
+func WaitForFinish() {
+	wg.Wait()
+}
