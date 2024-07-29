@@ -31,6 +31,10 @@ func encoderFile() zapcore.Encoder {
 }
 
 func logFile() zapcore.WriteSyncer {
-	file, _ := os.OpenFile("log/message-broker-log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	path := os.Getenv("LOG_PATH")
+	if path == "" {
+		path = "log/message-broker.log"
+	}
+	file, _ := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	return zapcore.AddSync(file)
 }
