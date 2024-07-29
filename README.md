@@ -83,7 +83,7 @@ you can easily publish message, NewPublisher take the Queue type as arg to send 
 ```
 ### 6. Shutdown...
 
-you need to wait for a kill signal for shutdown so after kill signal you can shutdown redis,rabbit,kafka....
+you need to wait for a kill signal for shutdown so after kill signal you can shutdown 
 
 ```go
 sigChan := make(chan os.Signal, 1)
@@ -120,9 +120,8 @@ sigChan := make(chan os.Signal, 1)
 	cancel()
 
 	// Shutdowns...
-	redis.GetInstance().Shutdown(ctx)
-	kafka.GetInstance().Shutdown(ctx)
-	rabbitmq.GetInstance().Shutdown(ctx)
+    Consumer.ShutDown()
+
 ```
 
 
