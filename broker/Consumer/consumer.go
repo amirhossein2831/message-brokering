@@ -20,7 +20,7 @@ func RegisterJob(ctx context.Context, job job.Job) {
 	case Driver.RabbitMQ:
 		go rabbitmq.GetInstance().Consume(job)
 	case Driver.Kafka:
-		go kafka.GetInstance().Consume(job)
+		go kafka.GetInstance().Consume(ctx, job)
 	default:
 		log.Println("Unsupported driver")
 		logger.GetInstance().Error("Unsupported driver", zap.Any("driver", Driver.EnvDriver), zap.Time("time", time.Now()))

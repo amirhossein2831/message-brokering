@@ -33,7 +33,7 @@ func GetInstance() *Kafka {
 	}
 }
 
-func (k *Kafka) Consume(job job.Job) {
+func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 	topic := string(job.GetQueue())
 	log.Printf("Kafka: Start Consume job: %v", job.GetQueue())
 	logger.GetInstance().Info("Kafka: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
@@ -59,37 +59,45 @@ func (k *Kafka) Consume(job job.Job) {
 		return
 	}
 
+	messages := make(chan *kafka.Message)
+
+	go k.ReadMessages(ctx, messages)
+
 	for {
-		msg, err := k.connection.ReadMessage(-1)
-		if err != nil {
-			logger.GetInstance().Error("Kafka: Connection error: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-			time.Sleep(time.Second)
-			continue
+		select {
+		case <-ctx.Done():
+			log.Println("Kafka: Shutdown the kafka channel: ", string(job.GetQueue()), "...")
+			k.Shutdown()
+			// Perform any necessary cleanup here
+			return
+		case msg, ok := <-messages:
+			if !ok {
+				fmt.Println("Channel closed")
+				return
+			}
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				if err = job.Process(msg.Value); err != nil {
+					logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+				}
+
+				_, err = k.connection.CommitMessage(msg)
+				if err != nil {
+					logger.GetInstance().Error("Kafka: Failed to commit message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+				}
+				logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+			}()
 		}
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			if err = job.Process(msg.Value); err != nil {
-				logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-			}
-
-			_, err = k.connection.CommitMessage(msg)
-			if err != nil {
-				logger.GetInstance().Error("Kafka: Failed to commit message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-			}
-			logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-		}()
 	}
 }
 
-func (k *Kafka) Shutdown(ctx context.Context) {
-	<-ctx.Done()
+func (k *Kafka) Shutdown() {
 	wg.Wait()
-
-	log.Println("All Kafka jobs completed, shutting down")
-	logger.GetInstance().Info("Kafka: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
+	k.connection.Close()
+	logger.GetInstance().Info("Kafka: Shutdown the Kafka consumer", zap.Time("timestamp", time.Now()))
 }
 
 func (k *Kafka) createTopic(topic string, numPartitions int, replicationFactor int) ([]int32, error) {
@@ -153,4 +161,22 @@ func getPartitionsFromMetadata(topicMetadata kafka.TopicMetadata) []int32 {
 		partitions = append(partitions, partition.ID)
 	}
 	return partitions
+}
+
+func (k *Kafka) ReadMessages(ctx context.Context, messages chan<- *kafka.Message) {
+	defer close(messages)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			msg, err := k.connection.ReadMessage(-1)
+			if err != nil {
+				logger.GetInstance().Error("Kafka: Connection error: ", zap.Error(err), zap.Time("timestamp", time.Now()))
+				time.Sleep(time.Second)
+				continue
+			}
+			messages <- msg
+		}
+	}
 }
