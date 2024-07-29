@@ -40,44 +40,48 @@ func (r *Redis) GetClient() *redis.Client {
 	return r.connection
 }
 
-func (r *Redis) Consume(job job.Job) {
+func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	log.Printf("Redis: Start Consume job: %v", job.GetQueue())
 	logger.GetInstance().Info("Redis: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
-	ctx := context.Background()
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
 	r.pubSubs = append(r.pubSubs, pubSub)
 
 	for {
-		msg, err := pubSub.ReceiveMessage(ctx)
-		if err != nil {
-			logger.GetInstance().Error("Redis: Error Receiving Message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-			continue
-		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			err = job.Process([]byte(msg.Payload))
-			if err != nil {
-				logger.GetInstance().Error("Redis: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+		select {
+		case <-ctx.Done():
+			log.Println("Redis: Shutdown the redis channel: ", string(job.GetQueue()), "...")
+			r.Shutdown(pubSub)
+			return
+		case msg, ok := <-pubSub.Channel():
+			if !ok {
+				fmt.Printf("Channel closed for channel: %s\n", string(job.GetQueue()))
+				return
 			}
-			logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 
-		}()
+				err := job.Process([]byte(msg.Payload))
+				if err != nil {
+					logger.GetInstance().Error("Redis: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+				}
+				logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+
+			}()
+		}
 	}
 }
 
-func (r *Redis) Shutdown(ctx context.Context) {
-	<-ctx.Done()
+func (r *Redis) Shutdown(pubSub *redis.PubSub) {
 	wg.Wait()
-	for _, pubSub := range r.pubSubs {
-		_ = pubSub.Close()
+
+	if err := pubSub.Unsubscribe(context.Background()); err != nil {
+		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.Error(err))
 	}
 
-	if r.connection != nil {
-		r.connection.Close()
+	if err := pubSub.Close(); err != nil {
+		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.Error(err))
 	}
-	log.Println("All Redis jobs completed, shutting down")
 	logger.GetInstance().Info("Redis: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
 }
