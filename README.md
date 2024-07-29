@@ -125,3 +125,32 @@ sigChan := make(chan os.Signal, 1)
 ```
 
 
+### 7.ENV
+
+```dotenv
+# APP
+APP_HOST_NAME=localhost
+MESSAGE_BROKER_DRIVER=rabbitmq
+
+# KAFKA
+KAFKA_HOST=localhost
+KAFKA_PORT=9092
+KAFKA_CLIENT_ID=localhost
+KAFKA_CLIENT_ACK=all
+KAFKA_CONSUMER_OFFSET=earliest
+KAFKA_CONSUMER_GROUP_ID=test
+
+# REDIS
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# RABBIT
+RABBITMQ_USERNAME=user
+RABBITMQ_PASSWORD=password
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_MANAGEMENT_PORT=15672
+
+# LOGGER
+LOG_PATH=log/message-broker.log
+```
