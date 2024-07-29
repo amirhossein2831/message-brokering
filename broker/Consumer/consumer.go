@@ -18,7 +18,7 @@ func RegisterJob(ctx context.Context, job job.Job) {
 	case Driver.Redis:
 		go redis.GetInstance().Consume(ctx, job)
 	case Driver.RabbitMQ:
-		go rabbitmq.GetInstance().Consume(job)
+		go rabbitmq.GetInstance().Consume(ctx, job)
 	case Driver.Kafka:
 		go kafka.GetInstance().Consume(ctx, job)
 	default:
