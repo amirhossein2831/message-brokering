@@ -31,4 +31,5 @@ func ShutDown() {
 	kafka.WaitForFinish()
 	rabbitmq.WaitForFinish()
 	redis.WaitForFinish()
+	time.Sleep(1 * time.Second)
 }
