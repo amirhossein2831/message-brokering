@@ -79,13 +79,14 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 
 				if err = job.Process(msg.Value); err != nil {
 					logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+				} else {
+					logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
 
 				_, err = k.connection.CommitMessage(msg)
 				if err != nil {
 					logger.GetInstance().Error("Kafka: Failed to commit message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
-				logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 			}()
 		}
 	}

@@ -61,8 +61,9 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				err := job.Process([]byte(msg.Payload))
 				if err != nil {
 					logger.GetInstance().Error("Redis: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+				} else {
+					logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
-				logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 			}()
 		}
