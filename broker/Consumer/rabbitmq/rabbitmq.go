@@ -55,11 +55,12 @@ func (r *RabbitMQ) GetChannel() (*amqp.Channel, error) {
 	return ch, nil
 }
 
-func (r *RabbitMQ) Consume(job job.Job) {
+func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 	log.Printf("RabbitMQ: Start Consume job: %v", job.GetQueue())
 	logger.GetInstance().Info("RabbitMQ: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	ch, err := r.GetChannel()
+
 	if err != nil {
 		logger.GetInstance().Error("RabbitMQ: Failed to open a channel: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 		return
@@ -77,19 +78,30 @@ func (r *RabbitMQ) Consume(job job.Job) {
 		return
 	}
 
-	for d := range msgs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := job.Process(d.Body)
-			if err != nil {
-				logger.GetInstance().Error("RabbitMQ: Failed to  process job:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-				d.Nack(false, false)
-			} else {
-				logger.GetInstance().Info("RabbitMQ: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
-				d.Ack(false)
+	for {
+		select {
+		case <-ctx.Done():
+			ch.Close()
+			r.Shutdown(string(job.GetQueue()))
+			return
+		case d, ok := <-msgs:
+			if !ok {
+				log.Printf("Channel closed for queue: %s\n", job.GetQueue())
+				return
 			}
-		}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				err := job.Process(d.Body)
+				if err != nil {
+					logger.GetInstance().Error("RabbitMQ: Failed to  process job:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+					d.Nack(false, false)
+				} else {
+					logger.GetInstance().Info("RabbitMQ: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
+					d.Ack(false)
+				}
+			}()
+		}
 	}
 }
 
@@ -119,16 +131,12 @@ func (r *RabbitMQ) Publish(queue string, body []byte) error {
 	return err
 }
 
-func (r *RabbitMQ) Shutdown(ctx context.Context) {
-	<-ctx.Done()
-	wg.Wait()
-	for _, ch := range r.channels {
-		ch.Close()
-	}
+func (r *RabbitMQ) Shutdown(queue string) {
+	log.Println("RabbitMQ: Shutdown the RabbitMQ consumer:", queue, "...")
 
+	wg.Wait()
 	if r.connection != nil {
 		r.connection.Close()
 	}
-	log.Println("All RabbitMQ jobs completed, shutting down")
-	logger.GetInstance().Info("RabbitMq: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
+	logger.GetInstance().Info("RabbitMQ: Shutdown the RabbitMQ consumer:", zap.String("QueueName: ", queue), zap.Time("timestamp", time.Now()))
 }

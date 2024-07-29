@@ -67,7 +67,7 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 		select {
 		case <-ctx.Done():
 			log.Println("Kafka: Shutdown the kafka channel: ", string(job.GetQueue()), "...")
-			k.Shutdown()
+			k.Shutdown(string(job.GetQueue()))
 			// Perform any necessary cleanup here
 			return
 		case msg, ok := <-messages:
@@ -94,10 +94,16 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 	}
 }
 
-func (k *Kafka) Shutdown() {
+func (k *Kafka) Shutdown(queue string) {
+	log.Println("Kafka: Shutdown the kafka channel: ", queue, "...")
+
 	wg.Wait()
-	k.connection.Close()
-	logger.GetInstance().Info("Kafka: Shutdown the Kafka consumer", zap.Time("timestamp", time.Now()))
+	err := k.connection.Close()
+	if err != nil {
+		log.Printf("Redis: Failed unsubscribe from redis channel: queue: %s", queue)
+		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.String("QueueName: ", queue), zap.Error(err), zap.Time("timestamp", time.Now()))
+	}
+	logger.GetInstance().Info("Kafka: Shutdown the Kafka consumer", zap.String("QueueName: ", queue), zap.Time("timestamp", time.Now()))
 }
 
 func (k *Kafka) createTopic(topic string, numPartitions int, replicationFactor int) ([]int32, error) {

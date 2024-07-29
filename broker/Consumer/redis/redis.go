@@ -21,7 +21,6 @@ var (
 
 type Redis struct {
 	connection *redis.Client
-	pubSubs    []*redis.PubSub
 }
 
 func GetInstance() *Redis {
@@ -30,7 +29,6 @@ func GetInstance() *Redis {
 			connection: redis.NewClient(&redis.Options{
 				Addr: fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
 			}),
-			pubSubs: make([]*redis.PubSub, 0),
 		}
 	})
 	return instance
@@ -45,13 +43,11 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	logger.GetInstance().Info("Redis: Start Consume job: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
-	r.pubSubs = append(r.pubSubs, pubSub)
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Redis: Shutdown the redis channel: ", string(job.GetQueue()), "...")
-			r.Shutdown(pubSub)
+			r.Shutdown(pubSub, string(job.GetQueue()))
 			return
 		case msg, ok := <-pubSub.Channel():
 			if !ok {
@@ -73,15 +69,18 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	}
 }
 
-func (r *Redis) Shutdown(pubSub *redis.PubSub) {
-	wg.Wait()
+func (r *Redis) Shutdown(pubSub *redis.PubSub, queue string) {
+	log.Println("Redis: Shutdown the redis channel: ", queue, "...")
 
+	wg.Wait()
 	if err := pubSub.Unsubscribe(context.Background()); err != nil {
-		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.Error(err))
+		log.Println("Redis: Failed unsubscribe from redis channel: ", queue)
+		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.String("QueueName: ", queue), zap.Error(err), zap.Time("timestamp", time.Now()))
 	}
 
 	if err := pubSub.Close(); err != nil {
-		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.Error(err))
+		log.Println("Redis: Failed to close redis pubSub from redis channel: ", queue)
+		logger.GetInstance().Error("Redis: Failed to close redis pubSub from redis channel: ", zap.String("QueueName: ", queue), zap.Error(err), zap.Time("timestamp", time.Now()))
 	}
-	logger.GetInstance().Info("Redis: All jobs completed, shutting down: ", zap.Time("timestamp", time.Now()))
+	logger.GetInstance().Info("Redis: Shutdown the redis channel: ", zap.String("QueueName: ", queue), zap.Time("timestamp", time.Now()))
 }
