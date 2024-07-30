@@ -22,7 +22,6 @@ var (
 
 type Redis struct {
 	connection *redis.Client
-	semaphore  chan struct{}
 }
 
 func GetInstance() *Redis {
@@ -48,7 +47,7 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	defer r.Shutdown(pubSub, string(job.GetQueue()))
 
 	maxWorkers := Driver.GetWorkerNumber()
-	r.semaphore = make(chan struct{}, maxWorkers)
+	semaphore := make(chan struct{}, maxWorkers)
 
 	for {
 		select {
@@ -60,10 +59,10 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				return
 			}
 			wg.Add(1)
-			r.semaphore <- struct{}{}
+			semaphore <- struct{}{}
 			go func() {
 				defer func() {
-					<-r.semaphore
+					<-semaphore
 					wg.Done()
 				}()
 
@@ -73,7 +72,6 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				} else {
 					logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
-
 			}()
 		}
 	}
@@ -83,7 +81,6 @@ func (r *Redis) Shutdown(pubSub *redis.PubSub, queue string) {
 	log.Println("Redis: Shutdown the redis channel: ", queue, "...")
 
 	wg.Wait()
-	close(r.semaphore)
 	if err := pubSub.Unsubscribe(context.Background()); err != nil {
 		log.Println("Redis: Failed unsubscribe from redis channel: ", queue)
 		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.String("QueueName: ", queue), zap.Error(err), zap.Time("timestamp", time.Now()))
