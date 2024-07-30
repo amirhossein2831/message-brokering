@@ -159,3 +159,11 @@ RABBITMQ_MANAGEMENT_PORT=15672
 # LOGGER
 LOG_PATH=log/message-broker.log
 ```
+
+### 8.Hint
+
+if you get error missed dependency run 
+
+```shell
+go mod tidy
+```
