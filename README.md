@@ -13,6 +13,10 @@ This library allows you to:
 
 ### 2. Installation
 
+```shell
+go get github.com/amirhossein2831/message-brokering@v1.5.4
+```
+
 To use this library, copy the `.env.example` file to `.env`:
 
 ```sh
