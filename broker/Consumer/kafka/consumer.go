@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -63,6 +64,9 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 	messages := make(chan *kafka.Message)
 	go k.ReadMessages(ctx, messages)
 
+	maxWorkers := Driver.GetWorkerNumber()
+	workerPoll := make(chan struct{}, maxWorkers)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -73,9 +77,13 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 				return
 			}
 
+			workerPoll <- struct{}{}
 			wg.Add(1)
 			go func() {
-				defer wg.Done()
+				defer func() {
+					<-workerPoll
+					wg.Done()
+				}()
 
 				if err = job.Process(msg.Value); err != nil {
 					logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))

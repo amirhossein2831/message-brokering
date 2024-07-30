@@ -47,7 +47,7 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	defer r.Shutdown(pubSub, string(job.GetQueue()))
 
 	maxWorkers := Driver.GetWorkerNumber()
-	semaphore := make(chan struct{}, maxWorkers)
+	workerPoll := make(chan struct{}, maxWorkers)
 
 	for {
 		select {
@@ -59,10 +59,10 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				return
 			}
 			wg.Add(1)
-			semaphore <- struct{}{}
+			workerPoll <- struct{}{}
 			go func() {
 				defer func() {
-					<-semaphore
+					<-workerPoll
 					wg.Done()
 				}()
 
