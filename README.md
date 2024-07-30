@@ -131,6 +131,7 @@ sigChan := make(chan os.Signal, 1)
 # APP
 APP_HOST_NAME=localhost
 MESSAGE_BROKER_DRIVER=rabbitmq
+MESSAGE_BROKER_WORKER_NUMBER=3
 
 # KAFKA
 KAFKA_HOST=localhost
