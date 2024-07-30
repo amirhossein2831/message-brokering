@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -79,8 +80,8 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 		return
 	}
 
-	const numWorkers = 5
-	workerPoll := make(chan struct{}, numWorkers)
+	maxWorkers := Driver.GetWorkerNumber()
+	workerPoll := make(chan struct{}, maxWorkers)
 
 	for {
 		select {
