@@ -79,6 +79,9 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 		return
 	}
 
+	const numWorkers = 5
+	workerPoll := make(chan struct{}, numWorkers)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -88,10 +91,15 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 				log.Printf("Channel closed for queue: %s\n", job.GetQueue())
 				return
 			}
+
+			workerPoll <- struct{}{}
 			wg.Add(1)
 			go func() {
-				defer wg.Done()
-				err := job.Process(d.Body)
+				defer func() {
+					<-workerPoll
+					wg.Done()
+				}()
+				err = job.Process(d.Body)
 				if err != nil {
 					logger.GetInstance().Error("RabbitMQ: Failed to  process job:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 					d.Nack(false, false)
