@@ -21,6 +21,7 @@ var (
 
 type Redis struct {
 	connection *redis.Client
+	semaphore  chan struct{}
 }
 
 func GetInstance() *Redis {
@@ -45,6 +46,9 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
 	defer r.Shutdown(pubSub, string(job.GetQueue()))
 
+	const maxWorkers = 5
+	r.semaphore = make(chan struct{}, maxWorkers)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -55,8 +59,12 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				return
 			}
 			wg.Add(1)
+			r.semaphore <- struct{}{}
 			go func() {
-				defer wg.Done()
+				defer func() {
+					<-r.semaphore
+					wg.Done()
+				}()
 
 				err := job.Process([]byte(msg.Payload))
 				if err != nil {
@@ -74,6 +82,7 @@ func (r *Redis) Shutdown(pubSub *redis.PubSub, queue string) {
 	log.Println("Redis: Shutdown the redis channel: ", queue, "...")
 
 	wg.Wait()
+	close(r.semaphore)
 	if err := pubSub.Unsubscribe(context.Background()); err != nil {
 		log.Println("Redis: Failed unsubscribe from redis channel: ", queue)
 		logger.GetInstance().Error("Redis: Failed unsubscribe from redis channel: ", zap.String("QueueName: ", queue), zap.Error(err), zap.Time("timestamp", time.Now()))
