@@ -5,6 +5,7 @@ import (
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"go.uber.org/zap"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -40,4 +41,18 @@ func Init() error {
 	}
 
 	return fmt.Errorf("not a valid driver")
+}
+
+func GetWorkerNumber() int {
+	workerNum := os.Getenv("MESSAGE_BROKER_WORKER_NUMBER")
+	if workerNum == "" {
+		return 3
+	}
+	num, err := strconv.Atoi(workerNum)
+	if err != nil {
+		logger.GetInstance().Error("Error parsing MESSAGE_BROKER_WORKER_NUMBER", zap.Error(err), zap.Time("timestamp", time.Now()))
+		return 3
+	}
+
+	return num
 }

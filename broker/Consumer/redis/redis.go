@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/go-redis/redis/v8"
@@ -46,7 +47,7 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 	pubSub := r.connection.Subscribe(ctx, string(job.GetQueue()))
 	defer r.Shutdown(pubSub, string(job.GetQueue()))
 
-	const maxWorkers = 5
+	maxWorkers := Driver.GetWorkerNumber()
 	r.semaphore = make(chan struct{}, maxWorkers)
 
 	for {
