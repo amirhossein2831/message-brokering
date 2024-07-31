@@ -27,7 +27,11 @@ cp .env.example .env
 
 1_You need to set up your message broker (redis, rabbitmq, kafka) in the .env file without type. The MESSAGE_BROKER_DRIVER environment variable specifies which broker to use.
 2_create a folder called log in the root of your project for save the log 
+3_Init the App to start run Application
 
+```go
+	bootstrap.InitApp(ctx)
+```
 
 ### 4. Job Interface and Declaration
 
@@ -103,11 +107,7 @@ sigChan := make(chan os.Signal, 1)
 	}
 	
 	// init the driver
-	err = Driver.Init()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	bootstrap.InitApp(ctx)
 
 	// publish a message to LogQueue
 	err = Publisher.NewPublisher(job.LogQueue).Publish([]byte("hello"))
@@ -117,7 +117,8 @@ sigChan := make(chan os.Signal, 1)
 	}
 
 	// Init Jobs
-	bootstrap.InitJob()
+	Consumer.RegisterJob(ctx, job.NewLogJob())
+    Consumer.RegisterJob(ctx, job.NewCreateUser())
 
 	<-sigChan
 	log.Println("Received shutdown signal")
@@ -155,6 +156,16 @@ RABBITMQ_PASSWORD=password
 RABBITMQ_HOST=localhost
 RABBITMQ_PORT=5672
 RABBITMQ_MANAGEMENT_PORT=15672
+
+# Database
+DB_DRIVER=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_DATABASE=message-broker
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_SSL_MODE=disable
+APP_TZ=Asia/Tehran
 
 # LOGGER
 LOG_PATH=log/message-broker.log
