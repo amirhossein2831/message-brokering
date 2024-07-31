@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/model"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
@@ -92,6 +93,8 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 				log.Printf("Channel closed for queue: %s\n", job.GetQueue())
 				return
 			}
+			rabbitmqRecord := model.NewRabbitMQ(model.Queued, job.GetQueue())
+			rabbitmqRecord.Create()
 
 			workerPoll <- struct{}{}
 			wg.Add(1)
@@ -100,11 +103,15 @@ func (r *RabbitMQ) Consume(ctx context.Context, job job.Job) {
 					<-workerPoll
 					wg.Done()
 				}()
+
+				rabbitmqRecord.UpdateStatus(model.InProgress)
 				err = job.Process(d.Body)
 				if err != nil {
+					rabbitmqRecord.UpdateStatus(model.Faild)
 					logger.GetInstance().Error("RabbitMQ: Failed to  process job:", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 					d.Nack(false, false)
 				} else {
+					rabbitmqRecord.UpdateStatus(model.Success)
 					logger.GetInstance().Info("RabbitMQ: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 					d.Ack(false)
 				}

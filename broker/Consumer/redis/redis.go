@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/model"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -35,6 +36,12 @@ func GetInstance() *Redis {
 	return instance
 }
 
+func (r *Redis) TestConnection() error {
+	ctx := context.Background()
+	status := r.connection.Ping(ctx)
+	return status.Err()
+}
+
 func (r *Redis) GetClient() *redis.Client {
 	return r.connection
 }
@@ -58,6 +65,9 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 				fmt.Printf("Channel closed for channel: %s\n", string(job.GetQueue()))
 				return
 			}
+			redisRecord := model.NewRedis(model.Queued, job.GetQueue())
+			redisRecord.Create()
+
 			wg.Add(1)
 			workerPoll <- struct{}{}
 			go func() {
@@ -66,10 +76,13 @@ func (r *Redis) Consume(ctx context.Context, job job.Job) {
 					wg.Done()
 				}()
 
+				redisRecord.UpdateStatus(model.InProgress)
 				err := job.Process([]byte(msg.Payload))
 				if err != nil {
+					redisRecord.UpdateStatus(model.Faild)
 					logger.GetInstance().Error("Redis: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				} else {
+					redisRecord.UpdateStatus(model.Success)
 					logger.GetInstance().Info("Redis: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
 			}()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/job"
+	"github.com/amirhossein2831/message-brokering/model"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"go.uber.org/zap"
@@ -32,6 +33,11 @@ func GetInstance() *Kafka {
 	return &Kafka{
 		connection: c,
 	}
+}
+
+func (k *Kafka) TestConnection() error {
+	_, err := k.connection.GetMetadata(nil, true, 5000)
+	return err
 }
 
 func (k *Kafka) Consume(ctx context.Context, job job.Job) {
@@ -77,6 +83,9 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 				return
 			}
 
+			kafkaRecord := model.NewKafka(model.Queued, job.GetQueue())
+			kafkaRecord.Create()
+
 			workerPoll <- struct{}{}
 			wg.Add(1)
 			go func() {
@@ -85,9 +94,12 @@ func (k *Kafka) Consume(ctx context.Context, job job.Job) {
 					wg.Done()
 				}()
 
+				kafkaRecord.UpdateStatus(model.InProgress)
 				if err = job.Process(msg.Value); err != nil {
+					kafkaRecord.UpdateStatus(model.Faild)
 					logger.GetInstance().Error("Kafka: Failed processing message: ", zap.Error(err), zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				} else {
+					kafkaRecord.UpdateStatus(model.Success)
 					logger.GetInstance().Info("Kafka: Job Process Successfully: ", zap.Any("QueueName: ", job.GetQueue()), zap.Time("timestamp", time.Now()))
 				}
 

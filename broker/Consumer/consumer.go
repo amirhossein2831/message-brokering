@@ -6,6 +6,7 @@ import (
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/rabbitmq"
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
+	"github.com/amirhossein2831/message-brokering/database"
 	"github.com/amirhossein2831/message-brokering/job"
 	"github.com/amirhossein2831/message-brokering/pkg/logger"
 	"go.uber.org/zap"
@@ -31,5 +32,10 @@ func ShutDown() {
 	kafka.WaitForFinish()
 	rabbitmq.WaitForFinish()
 	redis.WaitForFinish()
+
+	if err := database.GetInstance().Close(); err != nil {
+		log.Fatalf("Failed to close database connection: %v", err)
+	}
+	
 	time.Sleep(1 * time.Second)
 }
