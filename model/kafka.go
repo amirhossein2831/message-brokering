@@ -25,6 +25,10 @@ func NewKafka(status ConsumerStatus, queueName job.Queue) *Kafka {
 	}
 }
 
+func (Kafka) TableName() string {
+	return "kafka"
+}
+
 func (k *Kafka) Create() {
 	result := database.GetInstance().GetClient().Create(k)
 	if result.Error != nil {

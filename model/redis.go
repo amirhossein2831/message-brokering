@@ -25,6 +25,10 @@ func NewRedis(status ConsumerStatus, queueName job.Queue) *Redis {
 	}
 }
 
+func (Redis) TableName() string {
+	return "redis"
+}
+
 func (r *Redis) Create() {
 	result := database.GetInstance().GetClient().Create(r)
 	if result.Error != nil {

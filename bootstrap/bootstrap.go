@@ -7,6 +7,7 @@ import (
 	"github.com/amirhossein2831/message-brokering/broker/Consumer/redis"
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/database"
+	"github.com/amirhossein2831/message-brokering/model"
 	"log"
 )
 
@@ -22,6 +23,12 @@ func InitApp(ctx context.Context) {
 		log.Fatalf("Database Service: Failed to Initialize. %v", err)
 	}
 	log.Println("Database Service: Initialized Successfully.")
+
+	err = database.GetInstance().GetClient().AutoMigrate(&model.Redis{}, model.RabbitMQ{}, model.Kafka{})
+	if err != nil {
+		log.Fatalf("Database Service: Failed to Migrate models. %v", err)
+	}
+	log.Println("Database Service: Migrate Successfully.")
 
 	if Driver.EnvDriver == Driver.Kafka {
 		err := kafka.GetInstance().TestConnection()

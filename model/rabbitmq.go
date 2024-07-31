@@ -25,6 +25,10 @@ func NewRabbitMQ(status ConsumerStatus, queueName job.Queue) *RabbitMQ {
 	}
 }
 
+func (RabbitMQ) TableName() string {
+	return "rabbitmq"
+}
+
 func (r *RabbitMQ) Create() {
 	result := database.GetInstance().GetClient().Create(r)
 	if result.Error != nil {
