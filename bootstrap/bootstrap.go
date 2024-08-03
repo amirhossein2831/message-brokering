@@ -8,11 +8,18 @@ import (
 	"github.com/amirhossein2831/message-brokering/broker/Driver"
 	"github.com/amirhossein2831/message-brokering/database"
 	"github.com/amirhossein2831/message-brokering/model"
+	"github.com/joho/godotenv"
 	"log"
 )
 
 func InitApp(ctx context.Context) {
-	err := Driver.Init()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Env Service: Failed to Initialize. %v", err)
+	}
+	log.Println("Env Service: Initialized Successfully.")
+
+	err = Driver.Init()
 	if err != nil {
 		log.Fatalf("Driver Service: Failed to Initialize. %v", err)
 	}

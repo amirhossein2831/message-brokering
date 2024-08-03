@@ -14,7 +14,7 @@ This library allows you to:
 ### 2. Installation
 
 ```shell
-go get github.com/amirhossein2831/message-brokering@v1.5.4
+go get github.com/amirhossein2831/message-brokering@v1.6.2
 ```
 
 To use this library, copy the `.env.example` file to `.env`:
@@ -99,12 +99,6 @@ sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// load .env
-	err := godotenv.Load()
-	if err != nil {
-		return
-	}
 	
 	// init the driver
 	bootstrap.InitApp(ctx)
