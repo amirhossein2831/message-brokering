@@ -44,16 +44,34 @@ func Init() (err error) {
 func (database *Database) Connect() (err error) {
 	connectOnce.Do(func() {
 		dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
-		// Initialize the driver with configuration values
-		database.driver = &drivers.Postgres{
-			Username: os.Getenv("DB_USERNAME"),
-			Password: os.Getenv("DB_PASSWORD"),
-			Host:     os.Getenv("DB_HOST"),
-			Port:     dbPort,
-			Database: os.Getenv("DB_DATABASE"),
-			SSLMode:  os.Getenv("DB_SSL_MODE"),
-			Timezone: os.Getenv("APP_TZ"),
+		dbType := os.Getenv("DB_DRIVER")
+
+		switch dbType {
+		case "postgres":
+			database.driver = &drivers.Postgres{
+				Username: os.Getenv("DB_USERNAME"),
+				Password: os.Getenv("DB_PASSWORD"),
+				Host:     os.Getenv("DB_HOST"),
+				Port:     dbPort,
+				Database: os.Getenv("DB_DATABASE"),
+				SSLMode:  os.Getenv("DB_SSL_MODE"),
+				Timezone: os.Getenv("APP_TZ"),
+			}
+		case "mysql":
+			database.driver = &drivers.MySQL{
+				Username:  os.Getenv("DB_USERNAME"),
+				Password:  os.Getenv("DB_PASSWORD"),
+				Host:      os.Getenv("DB_HOST"),
+				Port:      dbPort,
+				Database:  os.Getenv("DB_DATABASE"),
+				Charset:   "utf8mb4",
+				ParseTime: true,
+				Loc:       os.Getenv("APP_TZ"),
+			}
+		default:
+			log.Fatal("Unsupported database type")
 		}
+
 		// Establish connection
 		err = database.driver.Connect()
 	})

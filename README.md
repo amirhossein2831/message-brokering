@@ -161,6 +161,15 @@ DB_PASSWORD=password
 DB_SSL_MODE=disable
 APP_TZ=Asia/Tehran
 
+# you can also use mysql
+DB_DRIVER=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=message-broker
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_LOC=Asia/Tehran
+
 # LOGGER
 LOG_PATH=log/message-broker.log
 ```

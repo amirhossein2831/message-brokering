@@ -18,8 +18,8 @@ type Postgres struct {
 }
 
 var (
-	client *gorm.DB
-	db     *sql.DB
+	postgresClient *gorm.DB
+	postgresDb     *sql.DB
 )
 
 // Connect establishes new connection to database.
@@ -30,21 +30,21 @@ func (postgres *Postgres) Connect() (err error) {
 		postgres.Password, postgres.Database, postgres.SSLMode, postgres.Timezone,
 	)
 
-	client, err = gorm.Open(gormPsql.Open(dsn))
+	postgresClient, err = gorm.Open(gormPsql.Open(dsn))
 
 	if err != nil {
 		return err
 	}
 
-	db, _ = client.DB()
+	postgresDb, _ = postgresClient.DB()
 
 	return
 }
 
 // Close closes the connection to database.
 func (postgres *Postgres) Close() (err error) {
-	db, err = client.DB()
-	err = db.Close()
+	postgresDb, err = postgresClient.DB()
+	err = postgresDb.Close()
 	if err != nil {
 		return err
 	}
@@ -53,10 +53,10 @@ func (postgres *Postgres) Close() (err error) {
 
 // GetClient returns an instance of database.
 func (postgres *Postgres) GetClient() *gorm.DB {
-	return client
+	return postgresClient
 }
 
 // GetDB returns an instance of database.
 func (postgres *Postgres) GetDB() *sql.DB {
-	return db
+	return postgresDb
 }
